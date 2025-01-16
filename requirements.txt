@@ -2,3 +2,6 @@ word2number
 sympy
 latex2sympy2
 regex
+httpx
+gym
+beautifulsoup4
