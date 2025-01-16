@@ -2,10 +2,11 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from openai import OpenAI
 from gsm8k_utils import extract_answer, math_equal, load_jsonl
+import os
 
 # Initialize OpenAI client with vLLM's API server
-openai_api_key = "EMPTY"
-openai_api_base = "http://localhost:30000/v1"
+openai_api_key = os.environ.get("OPENAI_API_KEY")
+openai_api_base = os.environ.get("OPENAI_API_BASE")
 client = OpenAI(
     api_key=openai_api_key,
     base_url=openai_api_base,
@@ -28,7 +29,7 @@ def get_cot_response(model: str, messages: list, sampling_params: dict = None):
         max_tokens=512,
         temperature=0.7,
     )
-
+    print('model: ', model)
     completion = client.chat.completions.create(
         model=model,
         messages=messages,
@@ -59,7 +60,7 @@ def load_gsm8k_questions():
 
 
 def test_one_cot_gsm8k():
-    model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
+    model_name = "deepseek-chat"
     question = "Janet's ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market?"
     messages = prepare_prompt_gsm8k(question)
     sampling_params = dict(
@@ -100,7 +101,7 @@ def test_cot_gsm8k(
     gsm8k_test_dataset = load_gsm8k_questions()
     gsm8k_test_dataset = gsm8k_test_dataset[:n_dataset_rows]
 
-    model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
+    model_name = "deepseek-chat"
     sampling_params = dict(
         temperature=0.7,  # Enable some variability in responses
         max_tokens=512,
