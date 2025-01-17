@@ -5,10 +5,10 @@ class DatasetLoader:
         self.dataset_path = dataset_path
 
     
-    def load(self, n_rows: int = None, prepare_prompt: Callable = None):
+    def load(self, num_samples: int = None, prepare_prompt: Callable = None):
         dataset = load_jsonl(self.dataset_path)
-        if n_rows is not None:
-            dataset = dataset[:n_rows]
+        if num_samples is not None:
+            dataset = dataset[:num_samples]
         self._dataset = dataset
     
     def prepare_dataset(self, process_func: Callable):

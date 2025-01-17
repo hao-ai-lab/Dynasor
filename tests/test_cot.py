@@ -6,16 +6,17 @@ from dynasor.evaluate import MathEvaluator
 from dynasor.evaluate.math_evaluator import majority_vote, extract_answer
 import os 
 
-def test_cot_gsm8k(is_parallel=True, n_dataset_rows=5):
+def test_cot_gsm8k(is_parallel=True, num_samples=5):
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     openai_api_base = os.environ.get("OPENAI_API_BASE")
 
     client = DeepSeekClient(api_key=openai_api_key, api_base=openai_api_base)
     CoTInstance = CoT(client)
-    dataset = MathDatasetLoader(dataset_path="../data/GSM8K/test.jsonl")
+    dataset = MathDatasetLoader(dataset_path="qwen-AIME24", split="test")
     evaluator = MathEvaluator(voting='majority')
 
     def prompt_func(item: dict) -> str:
+        print(item)
         question = item["question"]
         system_msg = "You are a helpful assistant."
         user_msg = f"{question}\nPlease reason step by step, and put your final answer within \\boxed{{}}."
@@ -28,7 +29,7 @@ def test_cot_gsm8k(is_parallel=True, n_dataset_rows=5):
     def ground_truth_func(item: dict) -> dict:
         return extract_answer(item["answer"], 'gsm8k')
 
-    dataset.load(n_rows=1)
+    dataset.load(num_samples=num_samples)
     messages = dataset.prepare_dataset(prompt_func)
     ground_truths = dataset.prepare_dataset(ground_truth_func)
 
@@ -40,12 +41,10 @@ def test_cot_gsm8k(is_parallel=True, n_dataset_rows=5):
 
     metric = evaluator.evaluate(results, ground_truths, extract_func=extract_answer)
     print('Accuracy: ', metric)
-    # results = CoTInstance.run_batch(
-    #     client, messages, is_parallel=is_parallel,
-    # )
+
     return results
 
 
 if __name__ == "__main__":
-    results = test_cot_gsm8k(is_parallel=True, n_dataset_rows=1)
+    results = test_cot_gsm8k(is_parallel=True, num_samples=5)
 
