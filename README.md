@@ -29,7 +29,7 @@ python chat_complete.py
 # Token Deprivation Experiment
 
 ```bash
-python client.py
+python run.py --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --dataset math500 --step 32 --max-tokens 16384 --start 0 --end 10 --output ./math500_step32_max16384_trials10  --probe-tokens 32 --probe "... Oh, I suddenly got the answer to the whole problem, **Final Answer**\n\n\\[ \\boxed{" 
+
 ```
 
-python run.py --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --dataset math500 --step 32 --max-tokens 16384 --start 0 --end 10 --output ./math500_step32_max16384_trials10  --probe-tokens 32 --probe "... Oh, I suddenly got the answer to the whole problem, **Final Answer**\n\n\\[ \\boxed{" 
