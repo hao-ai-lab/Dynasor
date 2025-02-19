@@ -154,12 +154,17 @@ python examples/client-vllm.py
 
 ## Benchmark
 
-### Token Deprivation Experiment
+### Token Deprivation and Applying Dynasor
 
-Run the following command to perform token deprivation experiment on math500 dataset.
+To conduct the token deprivation experiment on the math500 dataset, first launch a vLLM server, then run the following command. Note that the current `run.py` script processes only 10 questions. To obtain complete results, modify the --start and --end parameters for changing problem id and solve all problems in parallel!
+
 ```bash
 bash benchmark/TokenDeprivation/run.sh
 ```
+
+### Results Visualization
+
+Run `benchmark/TokenDeprivation/post_process.ipynb` to visualize the results
 
 ## Citation
 
