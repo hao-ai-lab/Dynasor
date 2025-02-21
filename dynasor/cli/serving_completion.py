@@ -566,3 +566,4 @@ class AdaptiveComputeOpenAIServingCompletion(OpenAIServing):
             tokens=out_tokens,
             top_logprobs=out_top_logprobs,
         )
+        

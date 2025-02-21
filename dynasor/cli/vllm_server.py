@@ -67,7 +67,7 @@ from vllm.entrypoints.openai.protocol import (ChatCompletionRequest,
 from vllm.entrypoints.openai.protocol import CompletionStreamResponse
 from vllm.entrypoints.openai.reasoning_parsers import ReasoningParserManager
 # yapf: enable
-from vllm.entrypoints.openai.serving_chat import OpenAIServingChat
+
 from vllm.entrypoints.openai.serving_completion import OpenAIServingCompletion
 from vllm.entrypoints.openai.serving_embedding import OpenAIServingEmbedding
 from vllm.entrypoints.openai.serving_engine import OpenAIServing
@@ -88,6 +88,7 @@ from vllm.utils import (
 )
 from vllm.version import __version__ as VLLM_VERSION
 
+from dynasor.cli.serving_chat import OpenAIServingChat
 from dynasor.cli.serving_completion import AdaptiveComputeOpenAIServingCompletion
 from dynasor.core.entropy import (
     obtain_answer,
@@ -537,6 +538,15 @@ async def create_chat_completion(request: ChatCompletionRequest, raw_request: Re
         return base(raw_request).create_error_response(
             message="The model does not support Chat Completions API"
         )
+
+    json_obj = await raw_request.json()
+    adaptive_compute = json_obj.get("adaptive_compute", None)
+
+    if adaptive_compute is not None:
+        newprompt=await handler.get_completion_prompt(request, raw_request)
+        request = CompletionRequest(prompt=newprompt,**json_obj)
+        generator = handle_adaptive_compute(request, raw_request)
+        return StreamingResponse(content=generator, media_type="text/event-stream")
 
     generator = await handler.create_chat_completion(request, raw_request)
 
@@ -1051,6 +1061,7 @@ async def run_server(args, **uvicorn_kwargs) -> None:
 
         shutdown_task = await serve_http(
             app,
+            sock=sock,
             host=args.host,
             port=args.port,
             log_level=args.uvicorn_log_level,

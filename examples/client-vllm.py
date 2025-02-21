@@ -66,13 +66,14 @@ def completions_example():
 
 
 def chat_example():
-    raise NotImplementedError("Chat example is not implemented yet")
     user_message = "Solve x^4 + x^3 = x^2 + x + 4"
-    prompt = format_deepseek_prompt(user_message)
+    print(f"Prompt: {user_message}")
+    print(f"-----")
+    print(f"Streaming response:\n")
 
     response = client.chat.completions.create(
         model=model,
-        messages=[{"role": "user", "content": prompt}],
+        messages=[{"role": "user", "content": user_message}],
         stream=True,
         max_tokens=1024,
         temperature=0.7,
@@ -95,7 +96,7 @@ def chat_example():
 
 
 def main():
-    completions_example()
+    chat_example()
 
 
 if __name__ == "__main__":
