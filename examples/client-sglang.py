@@ -4,7 +4,7 @@ import openai
 from rich import print
 
 openai_api_key = "dr32r34tnjnfkd"
-openai_api_base = "http://localhost:8000/v1"
+openai_api_base = "http://localhost:30000/v1"
 
 #model = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
 client = openai.OpenAI(

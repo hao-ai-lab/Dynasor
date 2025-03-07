@@ -1,0 +1,49 @@
+name: CI testing
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .
+
+
+      # - name: Run Client vllm API Example
+      #   shell: bash
+      #   working-directory: examples
+      #   run: |
+      #     echo "Running the client vllm API example..."
+      #     python client-vllm.py
+
+      - name: Start dynasor-vllm server and run client test
+        shell: bash
+        run: |
+          dynasor-vllm --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --enable-prefix-caching > server.log 2>&1 &
+          SERVER_PID=$!
+          echo "Started dynasor-vllm with PID: $SERVER_PID"
+          
+          sleep 100
+          
+          python examples/client-vllm.py
+          
+          echo "Dynasor-vllm server log:"
+          cat server.log
+          
+          kill $SERVER_PID
