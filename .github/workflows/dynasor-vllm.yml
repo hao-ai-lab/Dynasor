@@ -2,9 +2,9 @@ name: CI testing
 
 on:
   push:
-    branches: [ main ]
+    branches: [ Humaira ]
   pull_request:
-    branches: [ main ]
+    branches: [ Humaira ]
 
 jobs:
   test:
