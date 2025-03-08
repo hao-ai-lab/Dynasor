@@ -1,49 +1,46 @@
-name: CI testing
+name: GPU CI Testing
 
 on:
   push:
-    branches: [ Humaira ]
+    branches: [ main ]
   pull_request:
-    branches: [ Humaira ]
+    branches: [ main ]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  vllm-deployment-test:
+    runs-on: [self-hosted, gpu]  
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -e .
+          pip install vllm
+        # Installs all Python dependencies including those needed by vLLM and your project[3]
 
-
-      # - name: Run Client vllm API Example
-      #   shell: bash
-      #   working-directory: examples
-      #   run: |
-      #     echo "Running the client vllm API example..."
-      #     python client-vllm.py
-
-      - name: Start dynasor-vllm server and run client test
-        shell: bash
+      - name: Start vLLM Server
         run: |
-          dynasor-vllm --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --enable-prefix-caching > server.log 2>&1 &
-          SERVER_PID=$!
-          echo "Started dynasor-vllm with PID: $SERVER_PID"
-          
-          sleep 100
-          
+          nohup dynasor-vllm --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --enable-prefix-caching > server.log 2>&1 &
+        # The server command is run in background so that the CI job can proceed to test it[1]
+
+      - name: Wait for Server Startup
+        run: sleep 240
+
+      - name: Test the API Endpoint
+        run: |
           python examples/client-vllm.py
-          
-          echo "Dynasor-vllm server log:"
-          cat server.log
-          
-          kill $SERVER_PID
+
+      # - name: Stop vLLM Server
+      #   run: |
+      #     # Cleanly shuts down the server process running in the background
+      #     pkill -f dynasor-vllm || true
