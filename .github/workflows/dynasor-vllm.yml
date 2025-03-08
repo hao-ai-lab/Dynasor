@@ -1,0 +1,46 @@
+name: CI Testing
+
+on:
+  push:
+    branches: [ Humaira ]
+  pull_request:
+    branches: [ Humaira ]
+
+jobs:
+  vllm-deployment-test:
+    runs-on: [self-hosted, gpu]  
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: Humaira
+
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .
+          pip install --upgrade vllm
+        # Installs all Python dependencies including   those needed by vLLM and your project[3]
+
+      - name: Start vLLM Server
+        run: |
+          nohup  dynasor-vllm --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --enable-prefix-caching &
+        # The server command is run in background so that the CI job can proceed to test it[1]
+
+      - name: Wait for Server Startup
+        run: sleep 200
+
+      - name: Test the API Endpoint
+        run: |
+          python examples/client-vllm.py
+
+      # - name: Stop vLLM Server
+      #   run: |
+      #     pkill -f dynasor-vllm || true
