@@ -1,10 +1,10 @@
-name: GPU CI Testing
+name: CI Testing
 
 on:
   push:
-    branches: [ main ]
+    branches: [ Humaira ]
   pull_request:
-    branches: [ main ]
+    branches: [ Humaira ]
 
 jobs:
   vllm-deployment-test:
@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.head_ref || github.ref_name}}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -42,5 +42,4 @@ jobs:
 
       # - name: Stop vLLM Server
       #   run: |
-      #     # Cleanly shuts down the server process running in the background
       #     pkill -f dynasor-vllm || true
