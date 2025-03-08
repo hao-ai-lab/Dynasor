@@ -23,8 +23,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -e .
-          pip install vllm
-        # Installs all Python dependencies including those needed by vLLM and your project[3]
+          pip install --upgrade vllm
+        # Installs all Python dependencies including   those needed by vLLM and your project[3]
 
       - name: Start vLLM Server
         run: |
