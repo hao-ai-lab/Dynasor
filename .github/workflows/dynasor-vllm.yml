@@ -13,6 +13,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          ref: Humaira
+
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,11 +31,11 @@ jobs:
 
       - name: Start vLLM Server
         run: |
-          dynasor-vllm --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --enable-prefix-caching > server.log 2>&1 &
+          dynasor-vllm --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --enable-prefix-caching > server.log 2>&1
         # The server command is run in background so that the CI job can proceed to test it[1]
 
       - name: Wait for Server Startup
-        run: sleep 100
+        run: sleep 400
 
       - name: Test the API Endpoint
         run: |
