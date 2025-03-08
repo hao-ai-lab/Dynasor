@@ -8,7 +8,7 @@ on:
 
 jobs:
   vllm-deployment-test:
-    runs-on: ubuntu-latest  
+    runs-on: [self-hosted, gpu]  
 
     steps:
       - name: Checkout Repository
@@ -31,11 +31,11 @@ jobs:
 
       - name: Start vLLM Server
         run: |
-          dynasor-vllm --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --enable-prefix-caching
+          nohup  dynasor-vllm --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --enable-prefix-caching &
         # The server command is run in background so that the CI job can proceed to test it[1]
 
       - name: Wait for Server Startup
-        run: sleep 400
+        run: sleep 200
 
       - name: Test the API Endpoint
         run: |
