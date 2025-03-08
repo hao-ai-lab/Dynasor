@@ -8,7 +8,7 @@ on:
 
 jobs:
   vllm-deployment-test:
-    runs-on: [self-hosted, gpu]  
+    runs-on: ubuntu-latest  
 
     steps:
       - name: Checkout Repository
