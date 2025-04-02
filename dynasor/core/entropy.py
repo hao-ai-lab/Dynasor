@@ -146,4 +146,4 @@ def should_early_exit(
                 # logger.debug(f"Early exit on: {answer_candidates = } ({is_certains = })")
                 return True
 
-    return True
+    return False
