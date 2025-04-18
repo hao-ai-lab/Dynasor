@@ -55,7 +55,7 @@ from vllm.entrypoints.openai.protocol import (ChatCompletionRequest,
                                               EmbeddingResponse,
                                               EmbeddingResponseData,
                                               ErrorResponse,
-                                              LoadLoraAdapterRequest,
+                                              LoadLoRAAdapterRequest,
                                               PoolingChatRequest,
                                               PoolingCompletionRequest,
                                               PoolingRequest, PoolingResponse,
@@ -63,9 +63,9 @@ from vllm.entrypoints.openai.protocol import (ChatCompletionRequest,
                                               ScoreRequest, ScoreResponse,
                                               TokenizeRequest,
                                               TokenizeResponse,
-                                              UnloadLoraAdapterRequest)
+                                              UnloadLoRAAdapterRequest)
 from vllm.entrypoints.openai.protocol import CompletionStreamResponse
-from vllm.entrypoints.openai.reasoning_parsers import ReasoningParserManager
+from vllm.reasoning import ReasoningParserManager
 # yapf: enable
 
 from vllm.entrypoints.openai.serving_completion import OpenAIServingCompletion
@@ -73,8 +73,7 @@ from vllm.entrypoints.openai.serving_embedding import OpenAIServingEmbedding
 from vllm.entrypoints.openai.serving_engine import OpenAIServing
 from vllm.entrypoints.openai.serving_models import BaseModelPath, OpenAIServingModels
 from vllm.entrypoints.openai.serving_pooling import OpenAIServingPooling
-from vllm.entrypoints.openai.serving_rerank import JinaAIServingRerank
-from vllm.entrypoints.openai.serving_score import OpenAIServingScores
+from vllm.entrypoints.openai.serving_score import ServingScores
 from vllm.entrypoints.openai.serving_tokenization import OpenAIServingTokenization
 from vllm.entrypoints.openai.tool_parsers import ToolParserManager
 from vllm.entrypoints.utils import with_cancellation
@@ -164,8 +163,16 @@ async def build_async_engine_client_from_engine_args(
     """
 
     # AsyncLLMEngine.
+    # Try to detect if config is unsupported using a safe fallback
+    try:
+        config = engine_args.create_engine_config()
+        is_unsupported = config.pipeline_parallel_size > 1
+    except Exception as e:
+        logger.warning(f"Could not determine pipeline_parallel_size: {e}")
+        is_unsupported = False
+
     if (
-        MQLLMEngineClient.is_unsupported_config(engine_args)
+        is_unsupported
         or envs.VLLM_USE_V1
         or disable_frontend_multiprocessing
     ):
@@ -326,12 +333,12 @@ def embedding(request: Request) -> Optional[OpenAIServingEmbedding]:
     return request.app.state.openai_serving_embedding
 
 
-def score(request: Request) -> Optional[OpenAIServingScores]:
+def score(request: Request) -> Optional[ServingScores]:
     return request.app.state.openai_serving_scores
 
 
-def rerank(request: Request) -> Optional[JinaAIServingRerank]:
-    return request.app.state.jinaai_serving_reranking
+def rerank(request: Request) -> Optional[ServingScores]:
+    return request.app.state.openai_serving_scores
 
 
 def tokenization(request: Request) -> OpenAIServingTokenization:
@@ -777,7 +784,7 @@ if envs.VLLM_ALLOW_RUNTIME_LORA_UPDATING:
     )
 
     @router.post("/v1/load_lora_adapter")
-    async def load_lora_adapter(request: LoadLoraAdapterRequest, raw_request: Request):
+    async def load_lora_adapter(request: LoadLoRAAdapterRequest, raw_request: Request):
         handler = models(raw_request)
         response = await handler.load_lora_adapter(request)
         if isinstance(response, ErrorResponse):
@@ -789,7 +796,7 @@ if envs.VLLM_ALLOW_RUNTIME_LORA_UPDATING:
 
     @router.post("/v1/unload_lora_adapter")
     async def unload_lora_adapter(
-        request: UnloadLoraAdapterRequest, raw_request: Request
+        request: UnloadLoRAAdapterRequest, raw_request: Request
     ):
         handler = models(raw_request)
         response = await handler.unload_lora_adapter(request)
@@ -974,7 +981,7 @@ async def init_app_state(
         else None
     )
     state.openai_serving_scores = (
-        OpenAIServingScores(
+        ServingScores(
             engine_client,
             model_config,
             state.openai_serving_models,
@@ -984,7 +991,7 @@ async def init_app_state(
         else None
     )
     state.jinaai_serving_reranking = (
-        JinaAIServingRerank(
+        ServingScores(
             engine_client,
             model_config,
             state.openai_serving_models,

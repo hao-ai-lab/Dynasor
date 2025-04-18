@@ -21,8 +21,7 @@ from vllm.entrypoints.openai.protocol import (
     ChatCompletionStreamResponse, ChatMessage, DeltaFunctionCall, DeltaMessage,
     DeltaToolCall, ErrorResponse, FunctionCall, PromptTokenUsageInfo,
     RequestResponseMetadata, ToolCall, UsageInfo)
-from vllm.entrypoints.openai.reasoning_parsers import (ReasoningParser,
-                                                       ReasoningParserManager)
+from vllm.reasoning import (ReasoningParser,ReasoningParserManager)
 from vllm.entrypoints.openai.serving_engine import OpenAIServing
 from vllm.entrypoints.openai.serving_models import OpenAIServingModels
 from vllm.entrypoints.openai.tool_parsers import ToolParser, ToolParserManager
