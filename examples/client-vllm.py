@@ -2,9 +2,10 @@
 
 import openai
 from rich import print
+import time
 
 openai_api_key = "dr32r34tnjnfkd"
-openai_api_base = "http://localhost:30000/v1"
+openai_api_base = "http://localhost:8000/v1"
 
 #model = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
 client = openai.OpenAI(
@@ -13,13 +14,10 @@ client = openai.OpenAI(
 )
 
 # Query available models from the endpoint
-def get_available_models():
-    response = client.models.list()
-    return response.data
+
 
 #Print available models
-models = get_available_models()
-model = models[0].id
+model = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
 #print(f"Available models: {[model.id for model in models]}")
 print(f"Using model: {model}")
 print(f"-----")
@@ -71,28 +69,31 @@ def chat_example():
     print(f"-----")
     print(f"Streaming response:\n")
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": user_message}],
-        stream=True,
-        max_tokens=1024,
-        temperature=0.7,
-        top_p=0.95,
-        extra_body=dict(
-            adaptive_compute=dict(
-                mode="prompting",
-                # TODO: Properly form the names
-                probe_text=probe_text,
-                probe_text_end=probe_text_end,
-                certainty_window=2,
-                token_interval=32,
+    max_retries = 5
+    backoff_factor = 2
+
+    for attempt in range(max_retries):
+        try:
+            response = client.chat.completions.create(
+                model="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+                messages=[{"role": "user", "content": "Solve x^4 + x^3 = x^2 + x + 4"}],
+                stream=True
             )
-        ),
-    )
+            break  # Exit loop if successful
+        except openai.InternalServerError as e:
+            wait_time = backoff_factor ** attempt
+            print(f"Attempt {attempt + 1} failed: {e}. Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+    else:
+        print("All retry attempts failed.")
+    
+    print(response)
 
     for chunk in response:
-        token = chunk.choices[0].text
-        print(token, end="", flush=True)
+        if chunk.choices and hasattr(chunk.choices[0], 'delta'):
+            delta = chunk.choices[0].delta
+            if hasattr(delta, 'content') and delta.content:
+                print(delta.content, end="", flush=True)
 
 
 def main():
