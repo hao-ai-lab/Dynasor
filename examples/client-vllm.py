@@ -96,7 +96,7 @@ def chat_example():
 
 
 def main():
-    completions_example()
+    chat_example()
 
 
 if __name__ == "__main__":

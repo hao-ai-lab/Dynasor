@@ -91,6 +91,7 @@ def chat_example():
     )
 
     for chunk in response:
+        print("token: ",chunk.choices)
         token = chunk.choices[0].text
         print(token, end="", flush=True)
 
