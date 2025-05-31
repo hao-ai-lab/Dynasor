@@ -40,6 +40,11 @@ Simple extension on vLLM to help you speed up reasoning model without training.
 
 ---
 
+Latest News 🔥
+
+- [2025/05] Dynasor-CoT is integrated into [Snowflake Arctic Inference](https://github.com/snowflakedb/ArcticInference/tree/main/projects/dynasor)!
+- [2025/04] Dynasor-CoT is integrated into [NVIDIA TRT-LLM](https://github.com/NVIDIA/TensorRT-LLM/tree/main/tensorrt_llm/scaffolding/contrib/Dynasor)!
+
 Try our <a href="https://e4d417385887b7e801.gradio.live/">🤖 Demo</a>!
 
 <div align="center">
