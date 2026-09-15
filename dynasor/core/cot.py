@@ -1,3 +1,4 @@
+from contextlib import ExitStack, closing
 from typing import Optional
 
 from dynasor.core.evaluator import count_not_empty, eqaul_group
@@ -55,64 +56,59 @@ def openai_chat_completion_stream(
         probe_answers = []
         probe_responses = []
 
-        for _ in range(0, max_tokens, chunk_size):
+        if threshold <= 0 or chunk_size <= 0:
+            raise ValueError("threshold and chunk_size must be positive")
+
+        for offset in range(0, max_tokens, chunk_size):
 
             result = ""
             buffer = ""
-            api_response = client.completions.create(
-                model=model,
-                prompt=current_prompt,
-                temperature=temperature,
-                max_tokens=chunk_size,
-                stream=True,
-            )
-            if not adaptive_end:
-                probe = client.completions.create(
+            # Both requests own streaming HTTP responses. Close even an unread
+            # probe when generation ends naturally, raises, or is cancelled.
+            with ExitStack() as streams:
+                api_response = streams.enter_context(closing(client.completions.create(
+                    model=model,
+                    prompt=current_prompt,
+                    temperature=temperature,
+                    max_tokens=min(chunk_size, max_tokens - offset),
+                    stream=True,
+                )))
+                probe = streams.enter_context(closing(client.completions.create(
                     model=model,
                     temperature=0.6,
                     prompt=current_prompt + probeing_suffix,
                     stream=True,
                     max_tokens=20,
                     top_p=0.95,
-                )
+                )))
 
-            for chunk in api_response:
-                if (
-                    hasattr(chunk.choices[0], "text")
-                    and chunk.choices[0].text is not None
-                ):
-                    content = chunk.choices[0].text
-                    buffer += content
-                    if " " in buffer or "\n" in buffer:
-                        # if console:
-                        #    console.print(buffer, end='')
-                        yield buffer
-                        accumulated_response += buffer
-                        result += buffer
-                        buffer = ""
-            if buffer:
-                yield buffer
-                accumulated_response += buffer
-                # console.print(buffer, end='')
-                result += buffer
+                finish_reason = None
+                for chunk in api_response:
+                    if not chunk.choices:
+                        continue  # Usage-only streaming event.
+                    choice = chunk.choices[0]
+                    if choice.finish_reason is not None:
+                        finish_reason = choice.finish_reason
+                    if choice.text is not None:
+                        buffer += choice.text
+                        if " " in buffer or "\n" in buffer:
+                            yield buffer
+                            accumulated_response += buffer
+                            result += buffer
+                            buffer = ""
+                if buffer:
+                    yield buffer
+                    accumulated_response += buffer
+                    result += buffer
 
-            current_prompt += (
-                result  # Update the prompt with the new text for subsequent iterations
-            )
+                current_prompt += result
+                if finish_reason not in (None, "length") or not result:
+                    break
 
-            if (
-                chunk.choices[0].finish_reason is not None
-                and chunk.choices[0].finish_reason != "length"
-            ):
-                break
-
-            if not result:
-                break
-
-            if not adaptive_end:
                 probe_text = ""
                 for probe_chunk in probe:
-                    probe_text += probe_chunk.choices[0].text
+                    if probe_chunk.choices and probe_chunk.choices[0].text is not None:
+                        probe_text += probe_chunk.choices[0].text
 
                 answer = obtain_answer(probe_text)
                 probe_answers.append(answer)
@@ -163,17 +159,17 @@ def openai_chat_completion_stream(
 
         buffer = ""
         # Process the streaming response
-        for chunk in response:
-            if hasattr(chunk.choices[0], "text") and chunk.choices[0].text is not None:
-                content = chunk.choices[0].text
-                buffer += content
-                # Print when we have a complete word/sentence
-                if " " in buffer or "\n" in buffer:
-                    yield buffer
-                    full_response += buffer
-                    buffer = ""
-        if buffer:
-            yield buffer
-            full_response += buffer
+        with closing(response):
+            for chunk in response:
+                if chunk.choices and chunk.choices[0].text is not None:
+                    content = chunk.choices[0].text
+                    buffer += content
+                    if " " in buffer or "\n" in buffer:
+                        yield buffer
+                        full_response += buffer
+                        buffer = ""
+            if buffer:
+                yield buffer
+                full_response += buffer
 
         return full_response
